@@ -1,138 +1,295 @@
-"""Exemplo editável de execução; por padrão não acessa APIs nem exibe segredos."""
+"""Exemplos sintéticos de payload e parameters para as APIs do gpt_bridge.
 
-import os
+Como usar:
+    1. Escolha API_NAME no fim do arquivo.
+    2. Altere os valores PREENCHER_... no EXAMPLES[API_NAME].
+    3. Execute o arquivo com EXECUTE_REQUEST = False para conferir a configuração.
+    4. Altere EXECUTE_REQUEST = True para executar UMA chamada real.
+
+A importação de gpt_bridge acontece apenas após validar os exemplos: o módulo
+original solicita token imediatamente ao ser importado. Este arquivo NÃO modifica
+nenhuma função, endereço ou mecanismo de autenticação do gpt_bridge.py.
+
+Os campos cuja forma/rota depende de documentação não legível ou de cadastro no
+ambiente estão marcados como PREENCHER_...; os contratos de agentes e orquestrador
+são apenas ilustrativos e precisam de validação com o proprietário das APIs.
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from importlib import import_module
+from pathlib import Path
 from typing import Any
 
-from gpt_bradesco import (
-    AUTH_PARAMETERS,
-    auth_diagnostics,
-    configure_iagen,
-    get_api_config,
-    get_token_iagen,
-    text_generator,
-    embedding_generator,
-    ocr_generator,
-    retriever_search,
-    retriever_next_questions,
-    file_manager_list,
-    file_manager_upload_file,
-    file_manager_upload_base64,
-    file_manager_download_url,
-    file_manager_delete_file,
-    index_documents,
-    workflow_get_status,
-    agent_message,
-    orchestrator_message,
-)
 
-# 1. Selecione um serviço da lista de chaves de API_CONFIGS no módulo principal.
-API = "texto"
-
-# 2. Mantenha False até concluir as configurações; True faz requisição REAL.
-EXECUTAR_REQUISICAO = False
-
-# 3. Credenciais vêm do ambiente corporativo, sem serem gravadas neste arquivo.
-AUTH = {
-    **AUTH_PARAMETERS,
-    "ambiente": os.getenv("BRADESCO_AMBIENTE", "dev"),
-    "identificador": os.getenv("BRADESCO_IDENTIFICADOR", ""),
-    "senha": os.getenv("BRADESCO_SENHA", ""),
-    "token": os.getenv("BRADESCO_AUTHORIZATION_TOKEN", ""),
-    "ca_bundle": os.getenv("BRADESCO_CA_BUNDLE", ""),
+# Os nomes das funções são exatamente os encontrados em gpt_bridge.py.
+# API_CONFIGS do módulo principal também contém exemplos; estes são explícitos,
+# independentes e incluem workflow_execute e index_documents separadamente.
+EXAMPLES: dict[str, dict[str, Any]] = {
+    "texto": {
+        "function": "text_generator",
+        "payload": "Responda apenas: exemplo sintético concluído.",
+        "parameters": {
+            "deployment_name": "PREENCHER_MODELO_DE_TEXTO_HABILITADO",
+            "temperature": 0,
+            "max_tokens": 512,
+            "async_mode": False,
+            "stream": False,
+            "message_format": {"type": "text"},
+            "openai_api_version": "2024-02-01",
+        },
+    },
+    "embeddings": {
+        "function": "embedding_generator",
+        "payload": "Documento sintético para gerar um vetor de teste.",
+        "parameters": {
+            "deployment_name": "PREENCHER_MODELO_DE_EMBEDDING_HABILITADO",
+            # Deixe None: a função não envia dimensions nesse caso.
+            "dimensions": None,
+            "timeout": 120,
+        },
+    },
+    "ocr": {
+        "function": "ocr_generator",
+        "payload": {
+            "files_path": ["PREENCHER_CAMINHO_DO_ARQUIVO_SINTETICO_NO_CONTAINER"],
+            "container": "PREENCHER_CONTAINER_AUTORIZADO",
+            "input_text": "Extraia o texto deste documento sintético.",
+        },
+        "parameters": {"timeout": 120},
+    },
+    "retriever_documentos": {
+        "function": "retriever_search",
+        "payload": {
+            "index_name": "PREENCHER_INDICE_CADASTRADO",
+            "search_query": "Qual é o assunto do documento sintético?",
+        },
+        "parameters": {"timeout": 120},
+    },
+    "retriever_proximas_perguntas": {
+        "function": "retriever_next_questions",
+        "payload": {
+            "next_question_config": "PREENCHER_CONFIGURACAO_CADASTRADA",
+            "search_query": "O que mais poderia ser perguntado sobre o documento sintético?",
+        },
+        "parameters": {"timeout": 120},
+    },
+    "arquivo_listar": {
+        "function": "file_manager_list",
+        "payload": {
+            "container_name": "PREENCHER_CONTAINER_AUTORIZADO",
+            "page": 0,
+            "page_size": 20,
+        },
+        "parameters": {"timeout": 120},
+    },
+    "arquivo_enviar": {
+        "function": "file_manager_upload_file",
+        "payload": {
+            "path_file": "PREENCHER_CAMINHO_LOCAL_DE_ARQUIVO_SINTETICO.txt",
+            "file_name": "amostra_sintetica.txt",
+            "container_name": "PREENCHER_CONTAINER_AUTORIZADO",
+            "create_container": "false",
+            # Evita sobrescrever, por padrão, um arquivo existente.
+            "overwrite": "false",
+        },
+        "parameters": {"timeout": 120},
+    },
+    "arquivo_base64": {
+        "function": "file_manager_upload_base64",
+        "payload": {
+            # Base64 do texto inofensivo 'Teste sintetico.'; não contém dados reais.
+            "base64": "VGVzdGUgc2ludGV0aWNvLg==",
+            "file_name": "amostra_sintetica.txt",
+            "container_name": "PREENCHER_CONTAINER_AUTORIZADO",
+            "create_container": False,
+            "overwrite": False,
+        },
+        "parameters": {"timeout": 120},
+    },
+    "arquivo_download_url": {
+        "function": "file_manager_download_url",
+        "payload": {"file_id": "PREENCHER_ID_DE_ARQUIVO_SINTETICO"},
+        "parameters": {"timeout": 120},
+    },
+    "arquivo_excluir": {
+        "function": "file_manager_delete_file",
+        "payload": {"file_id": "PREENCHER_ID_DE_ARQUIVO_SINTETICO"},
+        "parameters": {"timeout": 120},
+    },
+    "workflow_inicio": {
+        "function": "workflow_execute",
+        "payload": {
+            "workflow_configuration_code": "PREENCHER_CODIGO_DE_WORKFLOW_CADASTRADO",
+            "input_collection": {
+                "input_datas": [
+                    {
+                        # O número e os campos reais dependem do workflow.
+                        "workflow_step_number": "PREENCHER_NUMERO_DA_ETAPA",
+                        "workflow_step_input_collection": [
+                            {
+                                "full_path": "PREENCHER_CAMPO_ESPERADO_PELO_WORKFLOW",
+                                "detail_value": "PREENCHER_VALOR_SINTETICO_ESPERADO",
+                                "is_valid": True,
+                            }
+                        ],
+                    }
+                ]
+            },
+        },
+        "parameters": {"timeout": 120},
+    },
+    "indexar": {
+        "function": "index_documents",
+        "payload": {
+            # index_documents chama workflow_execute: não existe contrato genérico
+            # de indexação independente do workflow configurado.
+            "workflow_configuration_code": "PREENCHER_CODIGO_DO_WORKFLOW_DE_INDEXACAO",
+            "input_collection": {
+                "input_datas": [
+                    {
+                        "workflow_step_number": "PREENCHER_NUMERO_DA_ETAPA",
+                        "workflow_step_input_collection": [
+                            {
+                                "full_path": "PREENCHER_CAMPO_DO_WORKFLOW_DE_INDEXACAO",
+                                "detail_value": "PREENCHER_ID_DE_ARQUIVO_SINTETICO",
+                                "is_valid": True,
+                            }
+                        ],
+                    }
+                ]
+            },
+        },
+        "parameters": {"timeout": 120},
+    },
+    "workflow_status": {
+        "function": "workflow_get_status",
+        "payload": {"workflow_execution_id": "PREENCHER_ID_RETORNADO_PELO_WORKFLOW"},
+        # Em homol/prod a variável url_wkf do original é "None"; nesse caso,
+        # inclua endpoint_url completo do STATUS, com barra final.
+        "parameters": {"timeout": 120},
+    },
+    "agente": {
+        "function": "agent_message",
+        # ILUSTRATIVO: campo messages não foi confirmado para esse agente.
+        "payload": {"messages": [{"role": "user", "content": "Pergunta sintética."}]},
+        "parameters": {
+            "endpoint_url": "PREENCHER_URL_HTTPS_COMPLETA_DO_AGENTE",
+            "timeout": 120,
+        },
+    },
+    "orquestrador": {
+        "function": "orchestrator_message",
+        # ILUSTRATIVO: campo messages não foi confirmado para esse fluxo.
+        "payload": {"messages": [{"role": "user", "content": "Pergunta sintética."}]},
+        "parameters": {
+            "endpoint_url": "PREENCHER_URL_HTTPS_COMPLETA_DO_ORQUESTRADOR",
+            "timeout": 120,
+        },
+    },
 }
 
-# 4. Edite SOMENTE payload e parameters do serviço selecionado conforme catálogo.
-CONFIG = get_api_config(API)
-CONFIG["parameters"]["ambiente"] = AUTH["ambiente"]
-# Exemplo para embeddings:
-# CONFIG["parameters"]["deployment_name"] = "MODELO_DE_EMBEDDINGS_HABILITADO"
-# Exemplo para OCR:
-# CONFIG["payload"]["files_path"] = ["nome_do_arquivo_no_container.pdf"]
-# CONFIG["payload"]["container"] = "CONTAINER_AUTORIZADO"
+
+# Mantém a escolha de qual operação pode ser disparada explícita e auditável.
+# A exclusão demanda uma confirmação adicional e nunca será automática.
+DESTRUCTIVE_APIS = {"arquivo_excluir"}
 
 
-API_FUNCTIONS = {
-    "texto": text_generator,
-    "embeddings": embedding_generator,
-    "ocr": ocr_generator,
-    "retriever_documentos": retriever_search,
-    "retriever_proximas_perguntas": retriever_next_questions,
-    "arquivo_listar": file_manager_list,
-    "arquivo_enviar": file_manager_upload_file,
-    "arquivo_base64": file_manager_upload_base64,
-    "arquivo_download_url": file_manager_download_url,
-    "arquivo_excluir": file_manager_delete_file,
-    "indexar": index_documents,
-    "workflow_status": workflow_get_status,
-    "agente": agent_message,
-    "orquestrador": orchestrator_message,
-}
+def get_example(api_name: str) -> dict[str, Any]:
+    """Fornece uma cópia editável sem modificar os exemplos compartilhados."""
+    if api_name not in EXAMPLES:
+        available = ", ".join(sorted(EXAMPLES))
+        raise ValueError(f"API desconhecida: {api_name}. Disponíveis: {available}")
+    return deepcopy(EXAMPLES[api_name])
 
 
-def validate_configuration(api_name: str, config: dict[str, Any]) -> None:
-    """Impede solicitações com identificadores vazios dos exemplos."""
-    body = config["payload"]
-    parameters = config["parameters"]
-    if api_name in {"texto", "embeddings"} and not parameters.get("deployment_name"):
-        raise ValueError("Preencha CONFIG['parameters']['deployment_name'] com um modelo habilitado.")
-    if api_name == "ocr" and (
-        not body.get("container") or not body.get("files_path")
-        or not all(body["files_path"])
-    ):
-        raise ValueError("Informe container e files_path reais do OCR.")
-    if api_name == "retriever_documentos" and not body.get("index_name"):
-        raise ValueError("Informe index_name no payload do Retriever.")
-    if api_name == "retriever_proximas_perguntas" and not body.get("next_question_config"):
-        raise ValueError("Informe next_question_config no payload.")
-    if api_name in {"arquivo_listar", "arquivo_enviar", "arquivo_base64"} and not body.get("container_name"):
-        raise ValueError("Informe container_name do serviço de arquivos.")
-    if api_name == "arquivo_enviar" and (not body.get("path_file") or not body.get("file_name")):
-        raise ValueError("Informe path_file e file_name para upload.")
-    if api_name == "arquivo_base64" and (not body.get("base64") or not body.get("file_name")):
-        raise ValueError("Informe base64 e file_name para upload.")
-    if api_name in {"arquivo_download_url", "arquivo_excluir"} and not body.get("file_id"):
-        raise ValueError("Informe file_id da API de arquivos.")
-    if api_name == "indexar":
-        if not body.get("workflow_configuration_code"):
-            raise ValueError("Informe workflow_configuration_code habilitado para indexação.")
-        steps = body.get("input_collection", {}).get("input_datas", [])
-        if not steps or not steps[0].get("workflow_step_input_collection"):
-            raise ValueError("Preencha input_collection conforme workflow cadastrado.")
-        for item in steps[0]["workflow_step_input_collection"]:
-            if not item.get("full_path") or not item.get("detail_value"):
-                raise ValueError("Preencha full_path e detail_value do workflow cadastrado.")
-    if api_name == "workflow_status" and not body.get("workflow_execution_id"):
-        raise ValueError("Informe workflow_execution_id retornado pela execução.")
-    if api_name in {"agente", "orquestrador"} and not parameters.get("endpoint_url"):
-        raise ValueError("Informe endpoint_url HTTPS completo conforme documentação interna.")
+def _find_placeholders(value: Any, location: str = "config") -> list[str]:
+    """Impede enviar marcadores artificiais como IDs, URLs e nomes reais."""
+    if isinstance(value, str):
+        return [location] if value.startswith("PREENCHER_") else []
+    if isinstance(value, dict):
+        return [
+            issue
+            for key, item in value.items()
+            for issue in _find_placeholders(item, f"{location}.{key}")
+        ]
+    if isinstance(value, list):
+        return [
+            issue
+            for index, item in enumerate(value)
+            for issue in _find_placeholders(item, f"{location}[{index}]")
+        ]
+    return []
 
 
-def main() -> None:
-    """Confere configuração sem rede ou executa explicitamente uma única chamada."""
-    if API not in API_FUNCTIONS:
-        raise ValueError(f"API desconhecida: {API}.")
-    configure_iagen(AUTH)
-    info = auth_diagnostics()
-    print("Ambiente:", info["ambiente"])
-    print("Identificador configurado:", info["identificador_configurado"])
-    print("Senha configurada:", info["senha_configurada"])
-    print("Token fornecido:", info["token_disponivel"])
-    print("CA corporativa configurada:", info["ca_corporativa_configurada"])
-    print("Serviço selecionado:", API)
-    print("Campos do payload:", list(CONFIG["payload"]) if isinstance(CONFIG["payload"], dict) else "texto")
-    print("Chaves dos parâmetros:", list(CONFIG["parameters"]))
-    if not EXECUTAR_REQUISICAO:
-        print("Modo diagnóstico: nenhuma requisição de rede foi enviada.")
-        return
-    if API == "arquivo_excluir":
-        raise ValueError("Exclusão exige executar file_manager_delete_file explicitamente em código autorizado.")
-    validate_configuration(API, CONFIG)
-    # Token manual pode já estar inválido; presença não comprova autenticação.
-    get_token_iagen(force_refresh=not bool(AUTH.get("token")))
-    result = API_FUNCTIONS[API](CONFIG["payload"], CONFIG["parameters"])
-    # Resposta pode conter documento, vetor ou URL assinada: não imprima seu conteúdo.
-    print("Requisição concluída; tipo do retorno:", type(result).__name__)
+def validate_example(api_name: str, example: dict[str, Any]) -> None:
+    """Valida configurações antes de importar o módulo que dispara o login."""
+    if api_name not in EXAMPLES:
+        raise ValueError(f"API não cadastrada nos exemplos: {api_name}")
+    if not isinstance(example, dict):
+        raise TypeError("example deve ser um dicionário.")
+    parameters = example.get("parameters")
+    if not isinstance(parameters, dict):
+        raise TypeError("parameters deve ser um dicionário.")
+    if "payload" not in example:
+        raise ValueError("O exemplo deve conter payload.")
+    placeholders = _find_placeholders(example["payload"], "payload")
+    placeholders += _find_placeholders(parameters, "parameters")
+    if placeholders:
+        raise ValueError("Preencha os campos obrigatórios: " + ", ".join(placeholders))
+    if api_name == "arquivo_enviar":
+        file_path = Path(example["payload"]["path_file"])
+        if not file_path.is_file():
+            raise FileNotFoundError("Informe um arquivo de teste local existente em path_file.")
+    if api_name in {"workflow_inicio", "indexar"}:
+        workflow_steps = example["payload"]["input_collection"]["input_datas"]
+        for step in workflow_steps:
+            if isinstance(step["workflow_step_number"], bool) or not isinstance(step["workflow_step_number"], int):
+                raise TypeError("workflow_step_number deve ser inteiro conforme cadastro do workflow.")
+    if api_name in {"agente", "orquestrador"}:
+        endpoint = parameters.get("endpoint_url", "")
+        if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
+            raise ValueError("Informe endpoint_url HTTPS completo conforme documentação interna.")
+
+
+def run_example(
+    api_name: str,
+    example: dict[str, Any],
+    *,
+    execute_request: bool = False,
+    confirm_delete: bool = False,
+) -> Any:
+    """Executa uma API selecionada somente após validação e autorização explícita."""
+    if not execute_request:
+        # Não exibe payload, tokens, URLs assinadas ou conteúdo dos documentos.
+        print(f"Pré-visualização: {api_name}; nenhuma requisição foi enviada.")
+        print("Campos de parameters:", ", ".join(example["parameters"].keys()))
+        return None
+    validate_example(api_name, example)
+    if api_name in DESTRUCTIVE_APIS and not confirm_delete:
+        raise PermissionError("Exclusão bloqueada: habilite confirm_delete explicitamente.")
+    # Importar gpt_bridge inicia o login existente; não mudamos esse comportamento.
+    bridge = import_module("gpt_bridge")
+    function = getattr(bridge, example["function"])
+    return function(example["payload"], example["parameters"])
+
+
+# Edite APENAS estas três opções e os valores PREENCHER_... do serviço escolhido.
+API_NAME = "texto"
+EXECUTE_REQUEST = False
+CONFIRM_DELETE = False
 
 
 if __name__ == "__main__":
-    main()
+    selected_example = get_example(API_NAME)
+    result = run_example(
+        API_NAME,
+        selected_example,
+        execute_request=EXECUTE_REQUEST,
+        confirm_delete=CONFIRM_DELETE,
+    )
+    if EXECUTE_REQUEST:
+        # Use a variável result no Python para inspecionar uma resposta sintética
+        # em ambiente autorizado, sem registrar seu conteúdo em logs.
+        print("Chamada finalizada; tipo de retorno:", type(result).__name__)
