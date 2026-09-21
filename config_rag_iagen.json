@@ -1,0 +1,88 @@
+{
+  "document": {
+    "document_id": "PREENCHER_ID_DOCUMENTO_AUTORIZADO",
+    "local_path": "exemplo_sintetico.pdf",
+    "file_name": "exemplo_sintetico.pdf",
+    "container_name": "PREENCHER_CONTAINER_AUTORIZADO",
+    "remote_path": "PREENCHER_CAMINHO_DO_ARQUIVO_NO_CONTAINER",
+    "file_id": null,
+    "create_container": false,
+    "overwrite": false
+  },
+  "text_parameters": {
+    "deployment_name": "PREENCHER_MODELO_DE_TEXTO_HABILITADO",
+    "temperature": 0,
+    "max_tokens": 4096,
+    "async_mode": false,
+    "stream": false,
+    "message_format": {
+      "type": "json_object"
+    },
+    "openai_api_version": "2024-02-01"
+  },
+  "ocr": {
+    "instruction": "Extraia o texto do documento sintético sem inventar conteúdo.",
+    "text_response_path": "PREENCHER_CAMINHO_JSON_DE_TEXTO_DO_OCR"
+  },
+  "chunking": {
+    "prompt_path": "prompt_rag_iagen.md",
+    "max_window_chars": 7000
+  },
+  "embedding": {
+    "model": "text-embedding-3-large",
+    "dimensions": null
+  },
+  "index": {
+    "index_name": "PREENCHER_NOME_DO_INDICE_CADASTRADO"
+  },
+  "index_workflow": {
+    "workflow_configuration_code": "PREENCHER_CODIGO_DO_WORKFLOW_INDEXADOR",
+    "workflow_step_number": 0,
+    "endpoint_url": null,
+    "execution_id_path": "workflow_execution_id",
+    "input_bindings": [
+      {
+        "full_path": "PREENCHER_FULL_PATH_DO_ID_DO_DOCUMENTO",
+        "value_from": "document_id"
+      },
+      {
+        "full_path": "PREENCHER_FULL_PATH_DO_CONTAINER",
+        "value_from": "container_name"
+      },
+      {
+        "full_path": "PREENCHER_FULL_PATH_DO_CAMINHO_REMOTO",
+        "value_from": "remote_path"
+      },
+      {
+        "full_path": "PREENCHER_FULL_PATH_DO_INDICE",
+        "value_from": "index_name"
+      },
+      {
+        "full_path": "PREENCHER_FULL_PATH_DOS_CHUNKS_SE_WORKFLOW_SUPORTAR",
+        "value_from": "chunks"
+      }
+    ]
+  },
+  "workflow_status": {
+    "endpoint_url": null,
+    "status_path": "status",
+    "success_status": "WF_COMPLETED_SUCCESS",
+    "failure_statuses": [],
+    "poll_interval_seconds": 5,
+    "timeout_seconds": 600
+  },
+  "retrieval": {
+    "extra_payload": {},
+    "items_path": "PREENCHER_CAMINHO_LISTA_RESULTADOS_RETRIEVER",
+    "text_path": "PREENCHER_CAMINHO_TEXTO_NO_ITEM",
+    "document_id_path": "PREENCHER_CAMINHO_ID_DOCUMENTO_NO_ITEM",
+    "chunk_id_path": "",
+    "page_path": ""
+  },
+  "answer": {
+    "max_sources": 5
+  },
+  "agent": {
+    "endpoint_url": "PREENCHER_ENDPOINT_HTTPS_DO_AGENTE"
+  }
+}
